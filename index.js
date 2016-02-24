@@ -1,16 +1,27 @@
 #!/usr/bin/env node
-var events = require('events')
 var crypto = require('crypto')
 var ndjson = require('ndjson')
 var through = require('through2')
 var level = require('level')
-var db = level('db', {valueEncoding: 'json'})
+
+if (process.stdin.isTTY) halp()
+
+var db = level(process.argv[2] || './db')
 
 process
   .stdin
   .pipe(ndjson.parse())
   .pipe(checkObj())
   .pipe(process.stdout)
+
+function halp () {
+  console.log('usage: unique-holds [/path/to/leveldb]')
+  console.log('')
+  console.log('Pipe newline-delimited JSON data to me. I\'ll hash the value and')
+  console.log('store it in a LevelDB instance. Every unique item that is later')
+  console.log('passed through me will be let through.')
+  process.exit(0)
+}
 
 function createHash (obj) {
   if (typeof obj !== 'string') obj = JSON.stringify(obj)
@@ -26,12 +37,12 @@ function checkObj () {
     var self = this
 
     db.get(h, function (err, i) {
-      if (!err) {
-        return next()
-      }
+      if (!err) return next()
 
       db.put(h, 1, function (err) {
-        self.push(JSON.stringify(hold) + "\n")
+        if (err) return next()
+
+        self.push(JSON.stringify(hold) + '\n')
         return next()
       })
     })
