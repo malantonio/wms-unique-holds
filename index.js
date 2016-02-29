@@ -15,7 +15,7 @@ process
   .pipe(process.stdout)
 
 function halp () {
-  console.log('usage: unique-holds [/path/to/leveldb]')
+  console.log('usage: %s [/path/to/leveldb]', process.argv[1])
   console.log('')
   console.log('Pipe newline-delimited JSON data to me. I\'ll hash the value and')
   console.log('store it in a LevelDB instance. Every unique item that is later')
